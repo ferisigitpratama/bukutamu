@@ -1,3 +1,4 @@
+
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
@@ -9,6 +10,7 @@ import {
     Building2,
     UserRound,
     RotateCcw,
+    MapPin,
 } from 'lucide-react';
 
 interface Visitor {
@@ -22,6 +24,17 @@ interface Visitor {
     receptionist: {
         name: string;
     } | null;
+    office: {
+        id: number;
+        name: string;
+        code: string;
+    } | null;
+}
+
+interface Office {
+    id: number;
+    name: string;
+    code: string;
 }
 
 type Period = 'all' | 'day' | 'week' | 'month' | 'custom';
@@ -32,6 +45,10 @@ interface Props {
     endDate: string | null;
     visitors: Visitor[];
     totalVisitors: number;
+    companyVisitors: number;
+    individualVisitors: number;
+    offices: Office[];
+    selectedOfficeId: number | null;
 }
 
 const periods: { label: string; value: Period }[] = [
@@ -48,12 +65,55 @@ export default function VisitorHistory({
     endDate,
     visitors,
     totalVisitors,
+    companyVisitors,
+    individualVisitors,
+    offices,
+    selectedOfficeId,
 }: Props) {
     const [selectedPeriod, setSelectedPeriod] = useState<Period>(period);
     const [customStart, setCustomStart] = useState(startDate ?? '');
     const [customEnd, setCustomEnd] = useState(endDate ?? '');
     const [search, setSearch] = useState('');
+    const [selectedOffice, setSelectedOffice] = useState<number | null>(
+        selectedOfficeId,
+    );
 
+    /**
+     * Mengirim filter ke backend.
+     */
+    const applyFilters = (
+        nextPeriod: Period,
+        officeId: number | null,
+        start?: string,
+        end?: string,
+    ) => {
+        const params: Record<string, string | number> = {
+            period: nextPeriod,
+        };
+
+        if (officeId !== null) {
+            params.office_id = officeId;
+        }
+
+        if (nextPeriod === 'custom') {
+            if (!start || !end) {
+                return;
+            }
+
+            params.start_date = start;
+            params.end_date = end;
+        }
+
+        router.get('/history', params, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
+    /**
+     * Mengubah periode.
+     */
     const applyPeriod = (value: Period) => {
         setSelectedPeriod(value);
 
@@ -61,17 +121,38 @@ export default function VisitorHistory({
             return;
         }
 
-        router.get(
-            '/history',
-            { period: value },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            },
-        );
+        applyFilters(value, selectedOffice);
     };
 
+    /**
+     * Mengubah kantor.
+     */
+    const applyOfficeFilter = (value: string) => {
+        const officeId = value ? Number(value) : null;
+
+        setSelectedOffice(officeId);
+
+        if (selectedPeriod === 'custom') {
+            if (!customStart || !customEnd) {
+                return;
+            }
+
+            applyFilters(
+                'custom',
+                officeId,
+                customStart,
+                customEnd,
+            );
+
+            return;
+        }
+
+        applyFilters(selectedPeriod, officeId);
+    };
+
+    /**
+     * Menerapkan tanggal custom.
+     */
     const applyCustomDate = () => {
         if (!customStart || !customEnd) {
             return;
@@ -82,26 +163,23 @@ export default function VisitorHistory({
             return;
         }
 
-        router.get(
-            '/history',
-            {
-                period: 'custom',
-                start_date: customStart,
-                end_date: customEnd,
-            },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            },
+        applyFilters(
+            'custom',
+            selectedOffice,
+            customStart,
+            customEnd,
         );
     };
 
+    /**
+     * Reset seluruh filter.
+     */
     const resetFilter = () => {
         setSelectedPeriod('all');
         setCustomStart('');
         setCustomEnd('');
         setSearch('');
+        setSelectedOffice(null);
 
         router.get(
             '/history',
@@ -114,6 +192,9 @@ export default function VisitorHistory({
         );
     };
 
+    /**
+     * Format tanggal.
+     */
     const formatDate = (value: string) => {
         return new Date(value).toLocaleDateString('id-ID', {
             day: '2-digit',
@@ -122,6 +203,9 @@ export default function VisitorHistory({
         });
     };
 
+    /**
+     * Format tanggal dan waktu.
+     */
     const formatDateTime = (value: string) => {
         return new Date(value).toLocaleString('id-ID', {
             day: '2-digit',
@@ -133,6 +217,9 @@ export default function VisitorHistory({
         });
     };
 
+    /**
+     * Pencarian data pengunjung.
+     */
     const filteredVisitors = visitors.filter((visitor) => {
         const keyword = search.toLowerCase();
 
@@ -141,24 +228,30 @@ export default function VisitorHistory({
             (visitor.company ?? '').toLowerCase().includes(keyword) ||
             visitor.address.toLowerCase().includes(keyword) ||
             visitor.purpose.toLowerCase().includes(keyword) ||
-            (visitor.receptionist?.name ?? '').toLowerCase().includes(keyword)
+            (visitor.receptionist?.name ?? '')
+                .toLowerCase()
+                .includes(keyword) ||
+            (visitor.office?.name ?? '')
+                .toLowerCase()
+                .includes(keyword)
         );
     });
 
-    const companyTotal = visitors.filter(
-        (visitor) => visitor.visitor_type === 'perusahaan',
-    ).length;
-
-    const individualTotal = visitors.filter(
-        (visitor) => visitor.visitor_type === 'perorangan',
-    ).length;
-
     const periodLabel =
-        periods.find((item) => item.value === period)?.label ?? 'Semua Data';
+        periods.find((item) => item.value === period)?.label ??
+        'Semua Data';
 
+    /**
+     * URL Export PDF mengikuti filter aktif.
+     */
     const exportUrl = () => {
         const params = new URLSearchParams();
+
         params.set('period', selectedPeriod);
+
+        if (selectedOffice !== null) {
+            params.set('office_id', String(selectedOffice));
+        }
 
         if (selectedPeriod === 'custom') {
             params.set('start_date', customStart);
@@ -167,6 +260,10 @@ export default function VisitorHistory({
 
         return `/history/pdf?${params.toString()}`;
     };
+
+    const selectedOfficeName =
+        offices.find((office) => office.id === selectedOffice)?.name ??
+        'Semua Kantor';
 
     return (
         <>
@@ -184,8 +281,10 @@ export default function VisitorHistory({
                             <h1 className="text-2xl font-bold tracking-tight text-foreground">
                                 History Pengunjung
                             </h1>
+
                             <p className="text-sm text-muted-foreground">
-                                Riwayat seluruh kunjungan PT Indonesia Trans Network
+                                Riwayat seluruh kunjungan PT Indonesia Trans
+                                Network
                             </p>
                         </div>
                     </div>
@@ -216,6 +315,7 @@ export default function VisitorHistory({
                             <p className="text-sm font-medium text-muted-foreground">
                                 Total Pengunjung
                             </p>
+
                             <div className="rounded-lg bg-primary/10 p-2 text-primary">
                                 <Users className="size-5" />
                             </div>
@@ -224,6 +324,7 @@ export default function VisitorHistory({
                         <p className="mt-3 text-3xl font-bold text-foreground">
                             {totalVisitors.toLocaleString('id-ID')}
                         </p>
+
                         <p className="mt-1 text-xs text-muted-foreground">
                             Periode: {periodLabel}
                         </p>
@@ -234,14 +335,16 @@ export default function VisitorHistory({
                             <p className="text-sm font-medium text-muted-foreground">
                                 Pengunjung Perusahaan
                             </p>
+
                             <div className="rounded-lg bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
                                 <Building2 className="size-5" />
                             </div>
                         </div>
 
                         <p className="mt-3 text-3xl font-bold text-foreground">
-                            {companyTotal.toLocaleString('id-ID')}
+                            {companyVisitors.toLocaleString('id-ID')}
                         </p>
+
                         <p className="mt-1 text-xs text-muted-foreground">
                             Kunjungan dari perusahaan
                         </p>
@@ -252,14 +355,16 @@ export default function VisitorHistory({
                             <p className="text-sm font-medium text-muted-foreground">
                                 Pengunjung Perorangan
                             </p>
+
                             <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
                                 <UserRound className="size-5" />
                             </div>
                         </div>
 
                         <p className="mt-3 text-3xl font-bold text-foreground">
-                            {individualTotal.toLocaleString('id-ID')}
+                            {individualVisitors.toLocaleString('id-ID')}
                         </p>
+
                         <p className="mt-1 text-xs text-muted-foreground">
                             Kunjungan perorangan
                         </p>
@@ -273,8 +378,10 @@ export default function VisitorHistory({
                             <h2 className="font-semibold text-foreground">
                                 Filter Riwayat
                             </h2>
+
                             <p className="text-sm text-muted-foreground">
-                                Pilih periode data yang ingin ditampilkan.
+                                Pilih kantor dan periode data yang ingin
+                                ditampilkan.
                             </p>
                         </div>
 
@@ -288,6 +395,48 @@ export default function VisitorHistory({
                         </button>
                     </div>
 
+                    {/* FILTER KANTOR */}
+                    <div className="mb-5 grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                                <MapPin className="size-4 text-muted-foreground" />
+                                Filter Kantor
+                            </label>
+
+                            <select
+                                value={selectedOffice ?? ''}
+                                onChange={(event) =>
+                                    applyOfficeFilter(event.target.value)
+                                }
+                                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="">Semua Kantor</option>
+
+                                {offices.map((office) => (
+                                    <option
+                                        key={office.id}
+                                        value={office.id}
+                                    >
+                                        {office.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex items-end">
+                            <div className="w-full rounded-lg bg-muted/50 px-4 py-2.5">
+                                <p className="text-xs text-muted-foreground">
+                                    Kantor aktif
+                                </p>
+
+                                <p className="mt-1 text-sm font-semibold text-foreground">
+                                    {selectedOfficeName}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* FILTER PERIODE */}
                     <div className="flex flex-wrap gap-2">
                         {periods.map((item) => (
                             <button
@@ -305,12 +454,14 @@ export default function VisitorHistory({
                         ))}
                     </div>
 
+                    {/* CUSTOM DATE */}
                     {selectedPeriod === 'custom' && (
                         <div className="mt-5 grid gap-3 border-t border-border pt-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-foreground">
                                     Tanggal Awal
                                 </label>
+
                                 <input
                                     type="date"
                                     value={customStart}
@@ -325,6 +476,7 @@ export default function VisitorHistory({
                                 <label className="mb-2 block text-sm font-medium text-foreground">
                                     Tanggal Akhir
                                 </label>
+
                                 <input
                                     type="date"
                                     value={customEnd}
@@ -369,17 +521,22 @@ export default function VisitorHistory({
                             <h2 className="font-semibold text-foreground">
                                 Daftar Pengunjung
                             </h2>
+
                             <p className="text-sm text-muted-foreground">
-                                {filteredVisitors.length.toLocaleString('id-ID')} data ditampilkan
+                                {filteredVisitors.length.toLocaleString('id-ID')}{' '}
+                                data ditampilkan
                             </p>
                         </div>
 
                         <div className="relative w-full sm:max-w-xs">
                             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+
                             <input
                                 type="text"
                                 value={search}
-                                onChange={(event) => setSearch(event.target.value)}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
                                 placeholder="Cari nama, perusahaan, tujuan..."
                                 className="h-10 w-full rounded-lg border border-input bg-background pr-3 pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
@@ -387,11 +544,12 @@ export default function VisitorHistory({
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1000px] text-left text-sm">
+                        <table className="w-full min-w-[1100px] text-left text-sm">
                             <thead className="bg-muted/60 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 <tr>
                                     <th className="px-5 py-4">No.</th>
                                     <th className="px-5 py-4">Nama Pengunjung</th>
+                                    <th className="px-5 py-4">Kantor</th>
                                     <th className="px-5 py-4">Jenis</th>
                                     <th className="px-5 py-4">Perusahaan</th>
                                     <th className="px-5 py-4">Alamat</th>
@@ -416,14 +574,22 @@ export default function VisitorHistory({
                                         </td>
 
                                         <td className="px-5 py-4">
+                                            <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                                                {visitor.office?.name ?? '-'}
+                                            </span>
+                                        </td>
+
+                                        <td className="px-5 py-4">
                                             <span
                                                 className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                                    visitor.visitor_type === 'perusahaan'
+                                                    visitor.visitor_type ===
+                                                    'perusahaan'
                                                         ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                                                         : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                                 }`}
                                             >
-                                                {visitor.visitor_type === 'perusahaan'
+                                                {visitor.visitor_type ===
+                                                'perusahaan'
                                                     ? 'Perusahaan'
                                                     : 'Perorangan'}
                                             </span>
@@ -447,7 +613,8 @@ export default function VisitorHistory({
 
                                         <td className="px-5 py-4">
                                             <span className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
-                                                {visitor.receptionist?.name ?? '-'}
+                                                {visitor.receptionist?.name ??
+                                                    '-'}
                                             </span>
                                         </td>
                                     </tr>
@@ -456,7 +623,7 @@ export default function VisitorHistory({
                                 {filteredVisitors.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={8}
+                                            colSpan={9}
                                             className="px-5 py-16 text-center"
                                         >
                                             <div className="flex flex-col items-center gap-3">
@@ -468,8 +635,11 @@ export default function VisitorHistory({
                                                     <p className="font-semibold text-foreground">
                                                         Tidak ada data pengunjung
                                                     </p>
+
                                                     <p className="mt-1 text-sm text-muted-foreground">
-                                                        Tidak ditemukan data yang sesuai dengan filter atau pencarian.
+                                                        Tidak ditemukan data
+                                                        yang sesuai dengan
+                                                        filter atau pencarian.
                                                     </p>
                                                 </div>
                                             </div>
@@ -481,7 +651,8 @@ export default function VisitorHistory({
                     </div>
 
                     <div className="border-t border-border px-5 py-4 text-xs text-muted-foreground">
-                        Menampilkan {filteredVisitors.length} dari {totalVisitors} data pengunjung.
+                        Menampilkan {filteredVisitors.length} dari{' '}
+                        {totalVisitors} data pengunjung.
                     </div>
                 </section>
             </div>

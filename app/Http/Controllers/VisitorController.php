@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Visitor;
+use App\Models\Office;
+use App\Models\SecurityPersonnel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -32,7 +35,11 @@ class VisitorController extends Controller
             'individual' => Visitor::where('visitor_type', 'perorangan')->count(),
         ];
 
-        $recentVisitors = Visitor::with('receptionist')
+        $recentVisitors = Visitor::with([
+            'receptionist',
+            'office',
+            'security',
+        ])
             ->orderByDesc('visited_at')
             ->limit(8)
             ->get();
@@ -44,51 +51,134 @@ class VisitorController extends Controller
     }
 
     /**
-     * Menampilkan daftar pengunjung pada halaman input.
+     * Halaman input pengunjung.
      */
     public function index()
     {
-        $visitors = Visitor::with('receptionist')
+        $visitors = Visitor::with([
+            'receptionist',
+            'office',
+            'security',
+        ])
             ->orderByDesc('visited_at')
             ->paginate(10);
 
+        $offices = Office::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
+        $securityPersonnel = SecurityPersonnel::where('is_active', true)
+            ->whereHas('office', function ($query) {
+                $query->where('code', 'MOROTAI');
+            })
+            ->orderBy('name')
+            ->get(['id', 'office_id', 'name']);
+
         return Inertia::render('visitors/index', [
             'visitors' => $visitors,
+            'offices' => $offices,
+            'securityPersonnel' => $securityPersonnel,
         ]);
     }
 
     /**
-     * Menyimpan data pengunjung baru.
+     * Menyimpan data pengunjung.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:25'],
             'address' => ['required', 'string'],
             'visitor_type' => ['required', 'in:perusahaan,perorangan'],
+
             'company' => [
                 'nullable',
                 'required_if:visitor_type,perusahaan',
                 'string',
                 'max:255',
             ],
+
             'purpose' => ['required', 'string'],
+
+            'office_id' => [
+                'required',
+                'integer',
+                Rule::exists('offices', 'id')
+                    ->where('is_active', true),
+            ],
         ], [
             'name.required' => 'Nama pengunjung wajib diisi.',
+            'phone.required' => 'Nomor telepon wajib diisi.',
             'address.required' => 'Alamat wajib diisi.',
             'visitor_type.required' => 'Jenis pengunjung wajib dipilih.',
             'company.required_if' => 'Nama perusahaan wajib diisi.',
             'purpose.required' => 'Tujuan kunjungan wajib diisi.',
+            'office_id.required' => 'Kantor tujuan wajib dipilih.',
+            'office_id.exists' => 'Kantor tidak ditemukan atau tidak aktif.',
         ]);
+
+        $office = Office::findOrFail($validated['office_id']);
+
+        $securityId = null;
+
+        /*
+         * MOROTAI:
+         * Tanggal dan waktu diisi manual.
+         * Security wajib dipilih.
+         */
+        if ($office->code === 'MOROTAI') {
+            $morotaiData = $request->validate([
+                'visit_date' => [
+                    'required',
+                    'date_format:Y-m-d',
+                ],
+
+                'visit_time' => [
+                    'required',
+                    'date_format:H:i',
+                ],
+
+                'security_id' => [
+                    'required',
+                    'integer',
+                    Rule::exists('security_personnel', 'id')
+                        ->where('office_id', $office->id)
+                        ->where('is_active', true),
+                ],
+            ], [
+                'visit_date.required' => 'Tanggal kunjungan wajib diisi.',
+                'visit_time.required' => 'Waktu kunjungan wajib diisi.',
+                'security_id.required' => 'Nama security wajib dipilih.',
+                'security_id.exists' => 'Security tidak valid atau tidak aktif.',
+            ]);
+
+            $visitedAt = Carbon::createFromFormat(
+                'Y-m-d H:i',
+                $morotaiData['visit_date'] . ' ' . $morotaiData['visit_time'],
+                config('app.timezone')
+            );
+
+            $securityId = $morotaiData['security_id'];
+        } else {
+            /*
+             * KIMAJA:
+             * Waktu kunjungan otomatis menggunakan waktu server.
+             */
+            $visitedAt = now();
+        }
 
         Visitor::create([
             'name' => $validated['name'],
+            'phone' => $validated['phone'],
             'address' => $validated['address'],
             'visitor_type' => $validated['visitor_type'],
             'company' => $validated['company'] ?? null,
             'purpose' => $validated['purpose'],
             'receptionist_id' => Auth::id(),
-            'visited_at' => now(),
+            'office_id' => $office->id,
+            'security_id' => $securityId,
+            'visited_at' => $visitedAt,
         ]);
 
         return redirect()
@@ -98,23 +188,18 @@ class VisitorController extends Controller
 
     /**
      * Menentukan rentang tanggal berdasarkan filter.
-     *
-     * Periode:
-     * all    = Semua data
-     * day    = Hari ini
-     * week   = 7 hari terakhir
-     * month  = Bulan berjalan
-     * custom = Rentang tanggal pilihan
      */
     private function getDateRange(Request $request): array
     {
         $validated = $request->validate([
             'period' => ['nullable', 'in:all,day,week,month,custom'],
+
             'start_date' => [
                 'nullable',
                 'required_if:period,custom',
                 'date_format:Y-m-d',
             ],
+
             'end_date' => [
                 'nullable',
                 'required_if:period,custom',
@@ -130,7 +215,6 @@ class VisitorController extends Controller
 
         $period = $validated['period'] ?? 'month';
 
-        // Semua data tidak menggunakan batas tanggal.
         if ($period === 'all') {
             return [
                 'period' => 'all',
@@ -179,20 +263,49 @@ class VisitorController extends Controller
     }
 
     /**
-     * Mengambil data pengunjung sesuai periode.
+     * Memvalidasi filter kantor.
+     */
+    private function getOfficeFilter(Request $request): ?int
+    {
+        $validated = $request->validate([
+            'office_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('offices', 'id')
+                    ->where('is_active', true),
+            ],
+        ], [
+            'office_id.exists' => 'Kantor tidak ditemukan atau tidak aktif.',
+        ]);
+
+        return !empty($validated['office_id'])
+            ? (int) $validated['office_id']
+            : null;
+    }
+
+    /**
+     * Mengambil data pengunjung sesuai periode dan kantor.
      */
     private function getVisitors(
         ?DateTimeInterface $startDate,
-        ?DateTimeInterface $endDate
+        ?DateTimeInterface $endDate,
+        ?int $officeId = null
     ) {
-        $query = Visitor::with('receptionist');
+        $query = Visitor::with([
+            'receptionist',
+            'office',
+            'security',
+        ]);
 
-        // Jika tanggal null, ambil seluruh data.
         if ($startDate && $endDate) {
             $query->whereBetween('visited_at', [
                 $startDate,
                 $endDate,
             ]);
+        }
+
+        if ($officeId !== null) {
+            $query->where('office_id', $officeId);
         }
 
         return $query
@@ -242,18 +355,46 @@ class VisitorController extends Controller
     public function history(Request $request)
     {
         $range = $this->getDateRange($request);
+        $officeId = $this->getOfficeFilter($request);
 
         $visitors = $this->getVisitors(
             $range['startDate'],
-            $range['endDate']
+            $range['endDate'],
+            $officeId
         );
+
+        $kimajaVisitors = $visitors
+            ->filter(fn ($visitor) => $visitor->office?->code === 'KIMAJA')
+            ->values();
+
+        $morotaiVisitors = $visitors
+            ->filter(fn ($visitor) => $visitor->office?->code === 'MOROTAI')
+            ->values();
 
         return Inertia::render('visitors/history', [
             'period' => $range['period'],
             'startDate' => $range['startDate']?->format('Y-m-d'),
             'endDate' => $range['endDate']?->format('Y-m-d'),
+
             'visitors' => $visitors,
+            'kimajaVisitors' => $kimajaVisitors,
+            'morotaiVisitors' => $morotaiVisitors,
+
+            'offices' => Office::where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'code']),
+
+            'selectedOfficeId' => $officeId,
+
             'totalVisitors' => $visitors->count(),
+
+            'companyVisitors' => $visitors
+                ->where('visitor_type', 'perusahaan')
+                ->count(),
+
+            'individualVisitors' => $visitors
+                ->where('visitor_type', 'perorangan')
+                ->count(),
         ]);
     }
 
@@ -263,11 +404,21 @@ class VisitorController extends Controller
     public function exportPdf(Request $request)
     {
         $range = $this->getDateRange($request);
+        $officeId = $this->getOfficeFilter($request);
 
         $visitors = $this->getVisitors(
             $range['startDate'],
-            $range['endDate']
+            $range['endDate'],
+            $officeId
         );
+
+        $kimajaVisitors = $visitors
+            ->filter(fn ($visitor) => $visitor->office?->code === 'KIMAJA')
+            ->values();
+
+        $morotaiVisitors = $visitors
+            ->filter(fn ($visitor) => $visitor->office?->code === 'MOROTAI')
+            ->values();
 
         $summary = $this->getReportSummary($visitors);
 
@@ -279,11 +430,6 @@ class VisitorController extends Controller
             'custom' => 'Rentang Tanggal',
         ];
 
-        /*
-         * PDF membutuhkan tanggal awal dan akhir.
-         * Untuk Semua Data, gunakan tanggal kunjungan
-         * paling lama dan paling baru.
-         */
         if ($range['period'] === 'all') {
             $firstVisitor = $visitors->last();
             $lastVisitor = $visitors->first();
@@ -311,21 +457,40 @@ class VisitorController extends Controller
         $printedBy = Auth::user()->name ?? '-';
         $isDailyReport = $range['period'] === 'day';
 
+        $selectedOffice = $officeId
+            ? Office::find($officeId)
+            : null;
+
         $pdf = Pdf::loadView('pdf.visitors', [
             'visitors' => $visitors,
+            'kimajaVisitors' => $kimajaVisitors,
+            'morotaiVisitors' => $morotaiVisitors,
+
             'totalVisitors' => $summary['totalVisitors'],
             'companyVisitors' => $summary['companyVisitors'],
             'individualVisitors' => $summary['individualVisitors'],
             'receptionistSummary' => $summary['receptionistSummary'],
+
             'periodLabel' => $periodLabels[$range['period']],
             'startDate' => $startDate,
             'endDate' => $endDate,
+
             'logoData' => $logoData,
             'printedBy' => $printedBy,
             'isDailyReport' => $isDailyReport,
+
+            'selectedOfficeId' => $officeId,
+            'selectedOfficeCode' => $selectedOffice?->code,
+            'selectedOfficeName' => $selectedOffice?->name ?? 'Semua Kantor',
         ])->setPaper('a4', 'landscape');
 
-        $fileName = 'Laporan-Pengunjung-ITN-'
+        $officeFileName = $selectedOffice
+            ? '-' . str_replace(' ', '-', $selectedOffice->name)
+            : '-Semua-Kantor';
+
+        $fileName = 'Laporan-Pengunjung-ITN'
+            . $officeFileName
+            . '-'
             . $startDate->format('Ymd')
             . '-'
             . $endDate->format('Ymd')

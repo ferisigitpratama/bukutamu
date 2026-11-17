@@ -81,7 +81,7 @@
             color: #1e293b;
         }
 
-        /* TOTAL PENGUNJUNG */
+        /* SUMMARY */
         .summary {
             background: #ecfdf5;
             border: 1px solid #a7f3d0;
@@ -94,7 +94,6 @@
             font-size: 14px;
         }
 
-        /* SUMMARY CARD */
         .summary-table {
             width: 100%;
             border-collapse: collapse;
@@ -129,6 +128,7 @@
 
         .data-table {
             margin-top: 8px;
+            margin-bottom: 18px;
         }
 
         .data-table thead,
@@ -140,18 +140,18 @@
         .receptionist-table th {
             background: #047857;
             color: white;
-            padding: 9px 6px;
+            padding: 7px 5px;
             text-align: left;
-            font-size: 9px;
+            font-size: 8px;
             border: 1px solid #047857;
         }
 
         .data-table td,
         .receptionist-table td {
-            padding: 8px 6px;
+            padding: 7px 5px;
             border: 1px solid #cbd5e1;
             vertical-align: top;
-            font-size: 9px;
+            font-size: 8px;
         }
 
         .data-table tr:nth-child(even),
@@ -167,6 +167,16 @@
             text-align: center;
             padding: 20px;
             color: #64748b;
+        }
+
+        .office-label {
+            display: inline-block;
+            background: #ecfdf5;
+            color: #047857;
+            padding: 5px 9px;
+            font-size: 9px;
+            font-weight: bold;
+            border-radius: 3px;
         }
 
         /* TANDA TANGAN */
@@ -261,6 +271,10 @@
         <h2>LAPORAN HISTORY PENGUNJUNG</h2>
 
         <p>
+            Kantor: {{ $selectedOfficeName }}
+        </p>
+
+        <p>
             Periode: {{ $periodLabel }}
         </p>
 
@@ -271,10 +285,9 @@
         </p>
     </div>
 
-
-    <!-- ================================================= -->
-    <!-- REKAPITULASI KHUSUS MINGGUAN, BULANAN, DAN CUSTOM -->
-    <!-- ================================================= -->
+    <!-- ======================================== -->
+    <!-- REKAPITULASI MINGGUAN, BULANAN, CUSTOM -->
+    <!-- ======================================== -->
 
     @if (!$isDailyReport)
 
@@ -326,9 +339,7 @@
                 <tr>
                     <th width="8%" class="center">No.</th>
 
-                    <th>
-                        Nama Receptionist
-                    </th>
+                    <th>Nama Receptionist</th>
 
                     <th width="25%" class="center">
                         Jumlah Pengunjung
@@ -384,85 +395,184 @@
 
     @endif
 
+    <!-- ======================================== -->
+    <!-- TABEL PENGUNJUNG KANTOR KIMAJA -->
+    <!-- ======================================== -->
 
-    <!-- =========================== -->
-    <!-- DETAIL DATA SELURUH TAMU -->
-    <!-- =========================== -->
+    @if (!$selectedOfficeCode || $selectedOfficeCode === 'KIMAJA')
 
-    <div class="section-title">
-        DETAIL DATA PENGUNJUNG
-    </div>
+        <div class="section-title">
+            <span class="office-label">
+                KANTOR KIMAJA
+            </span>
+        </div>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th width="4%" class="center">No.</th>
-                <th width="13%">Nama Pengunjung</th>
-                <th width="9%">Jenis</th>
-                <th width="15%">Alamat</th>
-                <th width="13%">Perusahaan</th>
-                <th width="19%">Tujuan Kunjungan</th>
-                <th width="9%">Tanggal</th>
-                <th width="7%">Waktu</th>
-                <th width="11%">Receptionist</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @forelse ($visitors as $index => $visitor)
+        <table class="data-table">
+            <thead>
                 <tr>
-                    <td class="center">
-                        {{ $index + 1 }}
-                    </td>
-
-                    <td>
-                        {{ $visitor->name }}
-                    </td>
-
-                    <td>
-                        {{ $visitor->visitor_type === 'perusahaan'
-                            ? 'Perusahaan'
-                            : 'Perorangan' }}
-                    </td>
-
-                    <td>
-                        {{ $visitor->address }}
-                    </td>
-
-                    <td>
-                        {{ $visitor->company ?: '-' }}
-                    </td>
-
-                    <td>
-                        {{ $visitor->purpose }}
-                    </td>
-
-                    <td>
-                        {{ $visitor->visited_at->translatedFormat('d/m/Y') }}
-                    </td>
-
-                    <td>
-                        {{ $visitor->visited_at->format('H:i') }}
-                    </td>
-
-                    <td>
-                        {{ $visitor->receptionist->name ?? '-' }}
-                    </td>
+                    <th width="3%" class="center">No.</th>
+                    <th width="12%">Nama Pengunjung</th>
+                    <th width="10%">Telepon</th>
+                    <th width="8%">Jenis</th>
+                    <th width="13%">Alamat</th>
+                    <th width="11%">Perusahaan</th>
+                    <th width="19%">Tujuan Kunjungan</th>
+                    <th width="8%">Tanggal</th>
+                    <th width="6%">Waktu</th>
+                    <th width="10%">Receptionist</th>
                 </tr>
-            @empty
+            </thead>
+
+            <tbody>
+                @forelse ($kimajaVisitors as $index => $visitor)
+                    <tr>
+                        <td class="center">
+                            {{ $index + 1 }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->name }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->phone ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->visitor_type === 'perusahaan'
+                                ? 'Perusahaan'
+                                : 'Perorangan' }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->address }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->company ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->purpose }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->visited_at->translatedFormat('d/m/Y') }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->visited_at->format('H:i') }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->receptionist->name ?? '-' }}
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="10" class="empty">
+                            Tidak ada data pengunjung Kantor Kimaja pada periode ini.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+
+    @endif
+
+    <!-- ======================================== -->
+    <!-- TABEL PENGUNJUNG KANTOR MOROTAI -->
+    <!-- ======================================== -->
+
+    @if (!$selectedOfficeCode || $selectedOfficeCode === 'MOROTAI')
+
+        <div class="section-title">
+            <span class="office-label">
+                KANTOR MOROTAI
+            </span>
+        </div>
+
+        <table class="data-table">
+            <thead>
                 <tr>
-                    <td colspan="9" class="empty">
-                        Tidak ada data pengunjung pada periode ini.
-                    </td>
+                    <th width="3%" class="center">No.</th>
+                    <th width="11%">Nama Pengunjung</th>
+                    <th width="9%">Telepon</th>
+                    <th width="7%">Jenis</th>
+                    <th width="11%">Alamat</th>
+                    <th width="10%">Perusahaan</th>
+                    <th width="16%">Tujuan Kunjungan</th>
+                    <th width="8%">Tanggal</th>
+                    <th width="6%">Waktu</th>
+                    <th width="9%">Security</th>
+                    <th width="10%">Receptionist</th>
                 </tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
 
+            <tbody>
+                @forelse ($morotaiVisitors as $index => $visitor)
+                    <tr>
+                        <td class="center">
+                            {{ $index + 1 }}
+                        </td>
 
-    <!-- =========================== -->
+                        <td>
+                            {{ $visitor->name }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->phone ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->visitor_type === 'perusahaan'
+                                ? 'Perusahaan'
+                                : 'Perorangan' }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->address }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->company ?: '-' }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->purpose }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->visited_at->translatedFormat('d/m/Y') }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->visited_at->format('H:i') }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->security->name ?? '-' }}
+                        </td>
+
+                        <td>
+                            {{ $visitor->receptionist->name ?? '-' }}
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="11" class="empty">
+                            Tidak ada data pengunjung Kantor Morotai pada periode ini.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+
+    @endif
+
+    <!-- ======================================== -->
     <!-- TANDA TANGAN LAPORAN HARIAN -->
-    <!-- =========================== -->
+    <!-- ======================================== -->
 
     @if ($isDailyReport)
 
@@ -474,7 +584,6 @@
 
             <table class="signature-table">
                 <tr>
-
                     <td>
                         <div class="signature-role">
                             Petugas Customer Service
@@ -506,14 +615,12 @@
                             Supervisor / Penanggung Jawab
                         </div>
                     </td>
-
                 </tr>
             </table>
 
         </div>
 
     @endif
-
 
     <!-- FOOTER -->
     <div class="footer">
@@ -525,6 +632,7 @@
         WIB
 
         <br>
+
         Digital Guest Book ITN
     </div>
 

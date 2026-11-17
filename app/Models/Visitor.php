@@ -9,11 +9,14 @@ class Visitor extends Model
 {
     protected $fillable = [
         'name',
+        'phone',
         'address',
         'visitor_type',
         'company',
         'purpose',
         'receptionist_id',
+        'office_id',
+        'security_id',
         'visited_at',
     ];
 
@@ -27,5 +30,15 @@ class Visitor extends Model
     public function receptionist(): BelongsTo
     {
         return $this->belongsTo(User::class, 'receptionist_id');
+    }
+
+    public function office(): BelongsTo
+    {
+        return $this->belongsTo(Office::class);
+    }
+
+    public function security(): BelongsTo
+    {
+        return $this->belongsTo(SecurityPersonnel::class, 'security_id');
     }
 }
