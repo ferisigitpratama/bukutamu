@@ -4,6 +4,7 @@ import {
     LayoutGrid,
     UserPlus,
     History,
+    ShieldCheck,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -38,6 +39,11 @@ const mainNavItems: NavItem[] = [
         title: 'History Pengunjung',
         href: '/history',
         icon: History,
+    },
+    {
+        title: 'Manajemen Security',
+        href: '/security',
+        icon: ShieldCheck,
     },
 ];
 
