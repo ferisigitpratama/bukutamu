@@ -93,15 +93,18 @@ export default function VisitorIndex({
         });
     };
 
+    // FORMAT TANGGAL DAN WAKTU WIB
     const formatDate = (date: string) => {
-        return new Date(date).toLocaleString('id-ID', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZone: 'Asia/Jakarta',
-        });
+        return (
+            new Date(date).toLocaleString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Asia/Jakarta',
+            }) + ' WIB'
+        );
     };
 
     const inputClass =
@@ -117,6 +120,27 @@ export default function VisitorIndex({
                 {message}
             </p>
         );
+    };
+
+    // WARNA BADGE KANTOR
+    const getOfficeBadgeClass = (code: string) => {
+        switch (code) {
+            case 'KIMAJA':
+                return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+
+            case 'MOROTAI':
+                return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+
+            default:
+                return 'bg-muted text-muted-foreground';
+        }
+    };
+
+    // WARNA BADGE JENIS PENGUNJUNG
+    const getVisitorTypeBadgeClass = (type: string) => {
+        return type === 'perusahaan'
+            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+            : 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
     };
 
     return (
@@ -354,7 +378,7 @@ export default function VisitorIndex({
                                                     : 'border-input hover:bg-muted/50'
                                             }`}
                                         >
-                                            <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                                            <div className="flex size-10 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
                                                 <Building2 className="size-5" />
                                             </div>
 
@@ -582,12 +606,25 @@ export default function VisitorIndex({
                                             {(visitors.current_page - 1) * 10 + index + 1}
                                         </td>
 
+                                        {/* BADGE KANTOR */}
                                         <td className="px-5 py-4">
-                                            {visitor.office?.name || '-'}
+                                            {visitor.office ? (
+                                                <span
+                                                    className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${getOfficeBadgeClass(
+                                                        visitor.office.code,
+                                                    )}`}
+                                                >
+                                                    {visitor.office.name}
+                                                </span>
+                                            ) : (
+                                                '-'
+                                            )}
                                         </td>
 
                                         <td className="px-5 py-4">
-                                            <p className="font-medium">{visitor.name}</p>
+                                            <p className="font-medium">
+                                                {visitor.name}
+                                            </p>
                                             <p className="mt-1 text-xs text-muted-foreground">
                                                 {visitor.address}
                                             </p>
@@ -597,12 +634,13 @@ export default function VisitorIndex({
                                             {visitor.phone || '-'}
                                         </td>
 
+                                        {/* BADGE JENIS PENGUNJUNG */}
                                         <td className="px-5 py-4">
-                                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                                                visitor.visitor_type === 'perusahaan'
-                                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                                    : 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
-                                            }`}>
+                                            <span
+                                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getVisitorTypeBadgeClass(
+                                                    visitor.visitor_type,
+                                                )}`}
+                                            >
                                                 {visitor.visitor_type === 'perusahaan'
                                                     ? 'Perusahaan'
                                                     : 'Perorangan'}
@@ -617,7 +655,7 @@ export default function VisitorIndex({
                                             {visitor.purpose}
                                         </td>
 
-                                        <td className="px-5 py-4 text-muted-foreground">
+                                        <td className="px-5 py-4 whitespace-nowrap text-muted-foreground">
                                             {formatDate(visitor.visited_at)}
                                         </td>
 

@@ -7,12 +7,12 @@
 
     <style>
         @page {
-            margin: 25px;
+            margin: 15px 20px;
         }
 
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             color: #1e293b;
         }
 
@@ -20,8 +20,8 @@
         .header {
             width: 100%;
             border-bottom: 2px solid #059669;
-            padding-bottom: 12px;
-            margin-bottom: 18px;
+            padding-bottom: 7px;
+            margin-bottom: 9px;
         }
 
         .header-table {
@@ -30,54 +30,61 @@
         }
 
         .logo-cell {
-            width: 125px;
+            width: 110px;
             vertical-align: middle;
         }
 
         .logo {
-            max-width: 115px;
-            max-height: 65px;
+            max-width: 100px;
+            max-height: 48px;
         }
 
         .company-cell {
             vertical-align: middle;
-            padding-left: 12px;
+            padding-left: 10px;
         }
 
         .company-name {
-            font-size: 17px;
+            font-size: 15px;
             font-weight: bold;
             color: #047857;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .company-subtitle {
-            font-size: 9px;
+            font-size: 8px;
             color: #64748b;
-            line-height: 1.5;
+            line-height: 1.3;
         }
 
         /* JUDUL LAPORAN */
         .report-title {
             text-align: center;
-            margin-bottom: 18px;
+            margin-bottom: 9px;
         }
 
         .report-title h2 {
-            font-size: 14px;
-            margin: 0 0 7px;
+            font-size: 12px;
+            margin: 0 0 4px;
         }
 
         .report-title p {
-            margin: 3px 0;
+            margin: 2px 0;
             color: #64748b;
+            font-size: 8px;
+        }
+
+        .office-info {
+            margin-top: 4px;
+            font-weight: bold;
+            color: #047857;
         }
 
         /* SECTION */
         .section-title {
-            font-size: 11px;
+            font-size: 9px;
             font-weight: bold;
-            margin: 18px 0 9px;
+            margin: 10px 0 5px;
             color: #1e293b;
         }
 
@@ -85,36 +92,36 @@
         .summary {
             background: #ecfdf5;
             border: 1px solid #a7f3d0;
-            padding: 10px 12px;
-            margin-bottom: 15px;
+            padding: 7px 10px;
+            margin-bottom: 8px;
         }
 
         .summary strong {
             color: #047857;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .summary-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .summary-table td {
             width: 33.33%;
-            padding: 11px;
+            padding: 7px;
             border: 1px solid #a7f3d0;
             background: #ecfdf5;
         }
 
         .summary-label {
-            font-size: 9px;
+            font-size: 8px;
             color: #64748b;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .summary-number {
-            font-size: 17px;
+            font-size: 14px;
             font-weight: bold;
             color: #047857;
         }
@@ -127,8 +134,8 @@
         }
 
         .data-table {
-            margin-top: 8px;
-            margin-bottom: 18px;
+            margin-top: 5px;
+            margin-bottom: 10px;
         }
 
         .data-table thead,
@@ -140,18 +147,18 @@
         .receptionist-table th {
             background: #047857;
             color: white;
-            padding: 7px 5px;
+            padding: 5px 4px;
             text-align: left;
-            font-size: 8px;
+            font-size: 7px;
             border: 1px solid #047857;
         }
 
         .data-table td,
         .receptionist-table td {
-            padding: 7px 5px;
+            padding: 5px 4px;
             border: 1px solid #cbd5e1;
             vertical-align: top;
-            font-size: 8px;
+            font-size: 7px;
         }
 
         .data-table tr:nth-child(even),
@@ -165,7 +172,7 @@
 
         .empty {
             text-align: center;
-            padding: 20px;
+            padding: 10px;
             color: #64748b;
         }
 
@@ -173,64 +180,64 @@
             display: inline-block;
             background: #ecfdf5;
             color: #047857;
-            padding: 5px 9px;
-            font-size: 9px;
+            padding: 4px 8px;
+            font-size: 8px;
             font-weight: bold;
             border-radius: 3px;
         }
 
         /* TANDA TANGAN */
         .signature-section {
-            margin-top: 30px;
-            page-break-inside: avoid;
+            margin-top: 12px;
+            page-break-inside: auto;
         }
 
         .signature-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
-            margin-bottom: 12px;
+            margin-bottom: 7px;
         }
 
         .signature-table {
             width: 100%;
             border-collapse: collapse;
-            page-break-inside: avoid;
         }
 
         .signature-table td {
             width: 50%;
             text-align: center;
             vertical-align: top;
-            padding: 5px 30px;
+            padding: 3px 20px;
         }
 
         .signature-role {
             font-weight: bold;
-            font-size: 10px;
+            font-size: 9px;
         }
 
         .signature-space {
-            height: 85px;
+            height: 45px;
         }
 
         .signature-name {
             font-weight: bold;
             text-decoration: underline;
-            font-size: 10px;
+            font-size: 9px;
         }
 
         .signature-caption {
-            font-size: 9px;
+            font-size: 8px;
             color: #64748b;
-            margin-top: 4px;
+            margin-top: 3px;
         }
 
         /* FOOTER */
         .footer {
-            margin-top: 20px;
+            margin-top: 8px;
             text-align: right;
-            font-size: 9px;
+            font-size: 7px;
             color: #64748b;
+            line-height: 1.4;
         }
     </style>
 </head>
@@ -266,13 +273,10 @@
         </table>
     </div>
 
+
     <!-- JUDUL DAN PERIODE -->
     <div class="report-title">
         <h2>LAPORAN HISTORY PENGUNJUNG</h2>
-
-        <p>
-            Kantor: {{ $selectedOfficeName }}
-        </p>
 
         <p>
             Periode: {{ $periodLabel }}
@@ -283,12 +287,16 @@
             -
             {{ $endDate->translatedFormat('d F Y') }}
         </p>
+
+        @if (!empty($selectedOfficeName))
+            <p class="office-info">
+                Kantor: {{ $selectedOfficeName }}
+            </p>
+        @endif
     </div>
 
-    <!-- ======================================== -->
-    <!-- REKAPITULASI MINGGUAN, BULANAN, CUSTOM -->
-    <!-- ======================================== -->
 
+    <!-- REKAPITULASI -->
     @if (!$isDailyReport)
 
         <div class="section-title">
@@ -329,6 +337,7 @@
             </tr>
         </table>
 
+
         <!-- REKAP RECEPTIONIST -->
         <div class="section-title">
             REKAPITULASI BERDASARKAN RECEPTIONIST
@@ -338,16 +347,9 @@
             <thead>
                 <tr>
                     <th width="8%" class="center">No.</th>
-
                     <th>Nama Receptionist</th>
-
-                    <th width="25%" class="center">
-                        Jumlah Pengunjung
-                    </th>
-
-                    <th width="25%" class="center">
-                        Persentase
-                    </th>
+                    <th width="25%" class="center">Jumlah Pengunjung</th>
+                    <th width="25%" class="center">Persentase</th>
                 </tr>
             </thead>
 
@@ -387,7 +389,7 @@
 
     @else
 
-        <!-- FORMAT SEDERHANA KHUSUS LAPORAN HARIAN -->
+        <!-- LAPORAN HARIAN -->
         <div class="summary">
             Total Pengunjung:
             <strong>{{ $totalVisitors }} Tamu</strong>
@@ -395,11 +397,9 @@
 
     @endif
 
-    <!-- ======================================== -->
-    <!-- TABEL PENGUNJUNG KANTOR KIMAJA -->
-    <!-- ======================================== -->
 
-    @if (!$selectedOfficeCode || $selectedOfficeCode === 'KIMAJA')
+    <!-- TABEL KANTOR KIMAJA -->
+    @if (empty($selectedOfficeCode) || $selectedOfficeCode === 'KIMAJA')
 
         <div class="section-title">
             <span class="office-label">
@@ -480,11 +480,9 @@
 
     @endif
 
-    <!-- ======================================== -->
-    <!-- TABEL PENGUNJUNG KANTOR MOROTAI -->
-    <!-- ======================================== -->
 
-    @if (!$selectedOfficeCode || $selectedOfficeCode === 'MOROTAI')
+    <!-- TABEL KANTOR MOROTAI -->
+    @if (empty($selectedOfficeCode) || $selectedOfficeCode === 'MOROTAI')
 
         <div class="section-title">
             <span class="office-label">
@@ -496,16 +494,15 @@
             <thead>
                 <tr>
                     <th width="3%" class="center">No.</th>
-                    <th width="11%">Nama Pengunjung</th>
-                    <th width="9%">Telepon</th>
-                    <th width="7%">Jenis</th>
-                    <th width="11%">Alamat</th>
+                    <th width="12%">Nama Pengunjung</th>
+                    <th width="10%">Telepon</th>
+                    <th width="8%">Jenis</th>
+                    <th width="12%">Alamat</th>
                     <th width="10%">Perusahaan</th>
-                    <th width="16%">Tujuan Kunjungan</th>
+                    <th width="19%">Tujuan Kunjungan</th>
                     <th width="8%">Tanggal</th>
-                    <th width="6%">Waktu</th>
-                    <th width="9%">Security</th>
-                    <th width="10%">Receptionist</th>
+                    <th width="7%">Waktu</th>
+                    <th width="11%">Security</th>
                 </tr>
             </thead>
 
@@ -553,14 +550,10 @@
                         <td>
                             {{ $visitor->security->name ?? '-' }}
                         </td>
-
-                        <td>
-                            {{ $visitor->receptionist->name ?? '-' }}
-                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="11" class="empty">
+                        <td colspan="10" class="empty">
                             Tidak ada data pengunjung Kantor Morotai pada periode ini.
                         </td>
                     </tr>
@@ -570,10 +563,8 @@
 
     @endif
 
-    <!-- ======================================== -->
-    <!-- TANDA TANGAN LAPORAN HARIAN -->
-    <!-- ======================================== -->
 
+    <!-- TANDA TANGAN LAPORAN HARIAN -->
     @if ($isDailyReport)
 
         <div class="signature-section">
@@ -622,6 +613,7 @@
 
     @endif
 
+
     <!-- FOOTER -->
     <div class="footer">
         Dicetak oleh: {{ $printedBy }}
@@ -632,7 +624,6 @@
         WIB
 
         <br>
-
         Digital Guest Book ITN
     </div>
 

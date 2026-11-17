@@ -11,11 +11,13 @@ import {
     UserRound,
     RotateCcw,
     MapPin,
+    Phone,
 } from 'lucide-react';
 
 interface Visitor {
     id: number;
     name: string;
+    phone: string | null;
     address: string;
     visitor_type: 'perusahaan' | 'perorangan';
     company: string | null;
@@ -200,21 +202,24 @@ export default function VisitorHistory({
             day: '2-digit',
             month: 'long',
             year: 'numeric',
+            timeZone: 'Asia/Jakarta',
         });
     };
 
     /**
-     * Format tanggal dan waktu.
+     * Format tanggal dan waktu dengan zona WIB.
      */
     const formatDateTime = (value: string) => {
-        return new Date(value).toLocaleString('id-ID', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZone: 'Asia/Jakarta',
-        });
+        return (
+            new Date(value).toLocaleString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Asia/Jakarta',
+            }) + ' WIB'
+        );
     };
 
     /**
@@ -225,6 +230,7 @@ export default function VisitorHistory({
 
         return (
             visitor.name.toLowerCase().includes(keyword) ||
+            (visitor.phone ?? '').toLowerCase().includes(keyword) ||
             (visitor.company ?? '').toLowerCase().includes(keyword) ||
             visitor.address.toLowerCase().includes(keyword) ||
             visitor.purpose.toLowerCase().includes(keyword) ||
@@ -537,18 +543,19 @@ export default function VisitorHistory({
                                 onChange={(event) =>
                                     setSearch(event.target.value)
                                 }
-                                placeholder="Cari nama, perusahaan, tujuan..."
+                                placeholder="Cari nama, telepon, perusahaan..."
                                 className="h-10 w-full rounded-lg border border-input bg-background pr-3 pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1100px] text-left text-sm">
+                        <table className="w-full min-w-[1250px] text-left text-sm">
                             <thead className="bg-muted/60 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                                 <tr>
                                     <th className="px-5 py-4">No.</th>
                                     <th className="px-5 py-4">Nama Pengunjung</th>
+                                    <th className="px-5 py-4">Telepon</th>
                                     <th className="px-5 py-4">Kantor</th>
                                     <th className="px-5 py-4">Jenis</th>
                                     <th className="px-5 py-4">Perusahaan</th>
@@ -573,19 +580,33 @@ export default function VisitorHistory({
                                             {visitor.name}
                                         </td>
 
+                                        <td className="px-5 py-4 whitespace-nowrap text-foreground">
+                                            {visitor.phone || '-'}
+                                        </td>
+
+                                        {/* BADGE KANTOR */}
                                         <td className="px-5 py-4">
-                                            <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                                            <span
+                                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                                    visitor.office?.code === 'KIMAJA'
+                                                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                                        : visitor.office?.code === 'MOROTAI'
+                                                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                                          : 'bg-muted text-muted-foreground'
+                                                }`}
+                                            >
                                                 {visitor.office?.name ?? '-'}
                                             </span>
                                         </td>
 
+                                        {/* BADGE JENIS PENGUNJUNG */}
                                         <td className="px-5 py-4">
                                             <span
                                                 className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                                                     visitor.visitor_type ===
                                                     'perusahaan'
-                                                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                                        ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
+                                                        : 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
                                                 }`}
                                             >
                                                 {visitor.visitor_type ===
@@ -613,8 +634,7 @@ export default function VisitorHistory({
 
                                         <td className="px-5 py-4">
                                             <span className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
-                                                {visitor.receptionist?.name ??
-                                                    '-'}
+                                                {visitor.receptionist?.name ?? '-'}
                                             </span>
                                         </td>
                                     </tr>
@@ -623,7 +643,7 @@ export default function VisitorHistory({
                                 {filteredVisitors.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={9}
+                                            colSpan={10}
                                             className="px-5 py-16 text-center"
                                         >
                                             <div className="flex flex-col items-center gap-3">
